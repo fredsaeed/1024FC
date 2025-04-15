@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jogos Agendados</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f7fa;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #006400;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .jogo {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
+    .jogo .info {
+      flex: 1;
+      text-align: center;
+      min-width: 200px;
+    }
+
+    .jogo .info strong {
+      font-size: 22px;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .jogo .info span {
+      display: block;
+      color: #666;
+    }
+
+    .jogo img {
+      width: 150px;
+      height: 150px;
+      object-fit: contain;
+    }
+
+    .logo-esq, .logo-dir {
+      flex-basis: 150px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>Jogos Agendados</h1>
+  <div id="jogos"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.2/firebase-app.js";
+    import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.0.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBVWDPxef51zLUecq6mdykHHsjb3-4RipE",
+      authDomain: "fc-97e26.firebaseapp.com",
+      projectId: "fc-97e26",
+      storageBucket: "fc-97e26.appspot.com",
+      messagingSenderId: "681974250508",
+      appId: "1:681974250508:web:f524ef640cf183f21c8229",
+      measurementId: "G-C7DVJVVC6C"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const jogosDiv = document.getElementById("jogos");
+
+    const logoPredefinido = "assets/logo.png";
+
+    function parseDate(dateStr) {
+      if (!dateStr || dateStr.toLowerCase() === "a definir") return null;
+      const [day, month, year] = dateStr.split("/");
+      return new Date(`${year}-${month}-${day}`);
+    }
+
+    onSnapshot(collection(db, "jogos"), (snapshot) => {
+      let jogos = [];
+
+      snapshot.forEach((doc) => {
+        const jogo = doc.data();
+        jogo.id = doc.id;
+
+        const dataObj = parseDate(jogo.data);
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+
+        // Excluir jogos com data passada
+        if (dataObj && dataObj < hoje) return;
+
+        jogos.push(jogo);
+      });
+
+      // Ordenar por data (jogos com data indefinida vão para o fim)
+      jogos.sort((a, b) => {
+        const dateA = parseDate(a.data);
+        const dateB = parseDate(b.data);
+        if (!dateA) return 1;
+        if (!dateB) return -1;
+        return dateA - dateB;
+      });
+
+      jogosDiv.innerHTML = "";
+
+      jogos.forEach((jogo) => {
+        const tipo = jogo.tipo || "Casa";
+        const data = jogo.data || "A definir";
+        const hora = jogo.hora || "--:--";
+        const local = jogo.local || "a definir";
+        const competicao = jogo.competição || "Competição não especificada";
+        const adversarioLogo = jogo.logo || "";
+
+        const jogoHTML = `
+          <div class="jogo">
+            ${tipo === "Fora"
+              ? `<div class="logo-esq"><img src="${adversarioLogo}" alt="logo adversário"></div>`
+              : `<div class="logo-esq"><img src="${logoPredefinido}" alt="logo casa"></div>`}
+            <div class="info">
+              <strong>${tipo === "Fora" ? `${jogo.adversário} VS 1024 FC` : `1024 FC VS ${jogo.adversário}`}</strong>
+              <span>${competicao}</span>
+              <span>${data} - ${hora}</span>
+              <span>${local}</span>
+            </div>
+            ${tipo === "Fora"
+              ? `<div class="logo-dir"><img src="${logoPredefinido}" alt="logo casa"></div>`
+              : `<div class="logo-dir"><img src="${adversarioLogo}" alt="logo adversário"></div>`}
+          </div>
+        `;
+
+        jogosDiv.innerHTML += jogoHTML;
+      });
+    });
+  </script>
+</body>
+</html>
