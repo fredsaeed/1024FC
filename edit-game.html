@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editar ou Eliminar Jogos</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f7fa;
+      margin: 0;
+      padding: 0;
+    }
+
+    nav {
+      background-color: #006400;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: white;
+    }
+
+    nav h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    nav button {
+      background-color: white;
+      color: #006400;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 40px auto;
+      background: #fff;
+      border-radius: 10px;
+      padding: 30px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      text-align: center;
+      color: #006400;
+    }
+
+    .jogo {
+      border: 1px solid #ccc;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      background-color: #fefefe;
+    }
+
+    .jogo input, .jogo select {
+      width: calc(100% - 20px);
+      margin: 5px 0;
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    .buttons {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+
+    .buttons button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .edit-btn {
+      background-color: #006400;
+      color: white;
+    }
+
+    .delete-btn {
+      background-color: #c62828;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <h2>1024 FC - Admin</h2>
+    <button onclick="window.location.href='backend.html'">Voltar atrás</button>
+  </nav>
+
+  <div class="container">
+    <h1>Editar ou Eliminar Jogos</h1>
+    <div id="jogos"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.2/firebase-app.js";
+    import { getFirestore, collection, doc, getDocs, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.0.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBVWDPxef51zLUecq6mdykHHsjb3-4RipE",
+      authDomain: "fc-97e26.firebaseapp.com",
+      projectId: "fc-97e26",
+      storageBucket: "fc-97e26.appspot.com",
+      messagingSenderId: "681974250508",
+      appId: "1:681974250508:web:f524ef640cf183f21c8229",
+      measurementId: "G-C7DVJVVC6C"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const jogosRef = collection(db, "jogos");
+
+    async function carregarJogos() {
+      const container = document.getElementById("jogos");
+      container.innerHTML = "";
+
+      const querySnapshot = await getDocs(jogosRef);
+      querySnapshot.forEach((docSnap) => {
+        const jogo = docSnap.data();
+        const jogoId = docSnap.id;
+
+        const div = document.createElement("div");
+        div.className = "jogo";
+        div.innerHTML = `
+          <input value="${jogo.adversário}" placeholder="Adversário" id="adv-${jogoId}">
+          <input type="date" value="${jogo.data}" id="data-${jogoId}">
+          <input type="time" value="${jogo.hora}" id="hora-${jogoId}">
+          <input value="${jogo.local}" placeholder="Local" id="local-${jogoId}">
+          <select id="tipo-${jogoId}">
+            <option value="Casa" ${jogo.tipo === "Casa" ? "selected" : ""}>Casa</option>
+            <option value="Fora" ${jogo.tipo === "Fora" ? "selected" : ""}>Fora</option>
+          </select>
+          <input value="${jogo.competição}" placeholder="Competição" id="comp-${jogoId}">
+
+          <div class="buttons">
+            <button class="edit-btn" onclick="editarJogo('${jogoId}')">Guardar</button>
+            <button class="delete-btn" onclick="eliminarJogo('${jogoId}')">Eliminar</button>
+          </div>
+        `;
+
+        container.appendChild(div);
+      });
+    }
+
+    window.editarJogo = async function (id) {
+      const docRef = doc(db, "jogos", id);
+      await updateDoc(docRef, {
+        adversário: document.getElementById(`adv-${id}`).value,
+        data: document.getElementById(`data-${id}`).value,
+        hora: document.getElementById(`hora-${id}`).value,
+        local: document.getElementById(`local-${id}`).value,
+        tipo: document.getElementById(`tipo-${id}`).value,
+        competição: document.getElementById(`comp-${id}`).value
+      });
+      alert("Jogo atualizado com sucesso!");
+    };
+
+    window.eliminarJogo = async function (id) {
+      if (confirm("Tem a certeza que deseja eliminar este jogo?")) {
+        await deleteDoc(doc(db, "jogos", id));
+        alert("Jogo eliminado com sucesso!");
+        carregarJogos();
+      }
+    };
+
+    carregarJogos();
+  </script>
+</body>
+</html>

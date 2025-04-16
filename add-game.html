@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Adicionar Novo Jogo</title>
+
+  <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f7fa;
+      margin: 0;
+      padding: 0;
+    }
+
+    nav {
+      background-color: #006400;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: white;
+    }
+
+    nav h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    nav button {
+      background-color: white;
+      color: #006400;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+    }
+
+    nav button:hover {
+      background-color: #e0e0e0;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      background: #fff;
+      border-radius: 10px;
+      padding: 30px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      text-align: center;
+      color: #006400;
+    }
+
+    form label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+
+    form input, form select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+
+    form button {
+      width: 100%;
+      background-color: #006400;
+      color: white;
+      padding: 12px;
+      border: none;
+      border-radius: 5px;
+      margin-top: 25px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    form button:hover {
+      background-color: #004d00;
+    }
+
+    ul#jogos {
+      list-style: none;
+      padding: 0;
+    }
+
+    ul#jogos li {
+      background: #fff;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 10px 0;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    ul#jogos img {
+      margin-top: 10px;
+      max-height: 60px;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <h2>1024 FC - Admin</h2>
+    <button onclick="window.location.href='backend.html'">Voltar atrás</button>
+  </nav>
+
+  <div class="container">
+    <h1>Adicionar Novo Jogo</h1>
+
+    <form id="gameForm">
+      <label>Adversário:</label>
+      <input type="text" id="adversario" required>
+
+      <label>Data:</label>
+      <input type="date" id="data">
+
+      <label>Hora:</label>
+      <input type="time" id="hora">
+
+      <label>Local:</label>
+      <input type="text" id="local" required>
+
+      <label>Tipo de Jogo:</label>
+      <select id="tipo" required>
+        <option value="Casa">Casa</option>
+        <option value="Fora">Fora</option>
+      </select>
+
+      <label>Competição:</label>
+      <input type="text" id="competicao" required>
+
+      <label>Logótipo da Equipa:</label>
+      <input type="file" id="logo" accept="image/*">
+
+      <button type="submit">Adicionar Jogo</button>
+    </form>
+
+    <h2>Jogos Agendados</h2>
+    <ul id="jogos"></ul>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.2/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.0.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBVWDPxef51zLUecq6mdykHHsjb3-4RipE",
+      authDomain: "fc-97e26.firebaseapp.com",
+      projectId: "fc-97e26",
+      storageBucket: "fc-97e26.appspot.com",
+      messagingSenderId: "681974250508",
+      appId: "1:681974250508:web:f524ef640cf183f21c8229",
+      measurementId: "G-C7DVJVVC6C"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let logoURL = "";
+
+    const cloudinaryWidget = cloudinary.createUploadWidget({
+      cloudName: 'dkavb3don',
+      uploadPreset: '1024fc',
+      sources: ['local', 'url', 'camera'],
+      showAdvancedOptions: false,
+      cropping: false,
+      multiple: false,
+      maxFileSize: 10000000,
+    }, (error, result) => {
+      if (result.event === "success") {
+        logoURL = result.info.secure_url;
+        alert('Imagem carregada com sucesso!');
+      }
+    });
+
+    document.getElementById("logo").addEventListener('change', function () {
+      cloudinaryWidget.open();
+    });
+
+    document.getElementById("gameForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+
+      const adversario = document.getElementById("adversario").value;
+      const data = document.getElementById("data").value;
+      const hora = document.getElementById("hora").value;
+      const local = document.getElementById("local").value;
+      const tipo = document.getElementById("tipo").value;
+      const competicao = document.getElementById("competicao").value;
+
+      try {
+        await addDoc(collection(db, "jogos"), {
+          adversário: adversario,
+          data: data,
+          hora: hora,
+          local: local,
+          tipo: tipo,
+          competição: competicao,
+          logo: logoURL
+        });
+
+        alert('Jogo adicionado com sucesso!');
+        document.getElementById("gameForm").reset();
+        logoURL = "";
+      } catch (error) {
+        console.error('Erro ao adicionar jogo:', error);
+      }
+    });
+
+    onSnapshot(collection(db, "jogos"), (snapshot) => {
+      const list = document.getElementById("jogos");
+      list.innerHTML = "";
+      snapshot.forEach((doc) => {
+        const jogo = doc.data();
+        list.innerHTML += `
+          <li>
+            <strong>${jogo.adversário}</strong> (${jogo.tipo}) - ${jogo.data} às ${jogo.hora} @ ${jogo.local}<br>
+            Competição: ${jogo.competição || "N/A"}<br>
+            ${jogo.logo ? `<img src="${jogo.logo}" alt="Logotipo ${jogo.adversário}">` : ""}
+          </li>`;
+      });
+    });
+  </script>
+</body>
+</html>
