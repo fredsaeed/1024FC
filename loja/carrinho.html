@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Carrinho de Compras</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <style>
+    body {
+      background-color: #f5f7fa;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    nav {
+      background-color: #006400;
+      padding: 15px 20px;
+      color: white;
+    }
+
+    nav h2 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .container-custom {
+      max-width: 1000px;
+      margin: auto;
+      padding: 40px 20px;
+    }
+
+    .item-img {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 10px;
+    }
+
+    .item-row {
+      border-bottom: 1px solid #ccc;
+      padding: 15px 0;
+    }
+
+    .item-info {
+      flex: 1;
+      padding-left: 15px;
+    }
+
+    .total {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #006400;
+    }
+
+    .form-container, .confirmacao-container, .pagamento-container {
+      display: none;
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="d-flex justify-content-between align-items-center">
+      <h2 class="mb-0">Carrinho de Compras</h2>
+      <button class="btn btn-light" onclick="window.location.href='index.html'">← Continuar a Comprar</button>
+    </div>
+  </nav>
+
+  <div class="container-custom">
+    <div id="carrinhoContainer"></div>
+    <div class="mt-4 d-flex justify-content-end">
+      <div class="total">Total: € <span id="totalValor">0.00</span></div>
+    </div>
+
+    <!-- Botão para finalizar compra -->
+    <button class="btn btn-success w-100 mt-4" onclick="mostrarFormulario()">Finalizar Compra</button>
+
+    <!-- Formulário de finalização de compra -->
+    <div id="formularioFinalizar" class="form-container">
+      <h3 class="mb-3">Finalizar Compra</h3>
+      <form id="formCompra">
+        <div class="mb-3">
+          <label for="nome" class="form-label">Nome</label>
+          <input type="text" class="form-control" id="nome" required />
+        </div>
+        <div class="mb-3">
+          <label for="morada" class="form-label">Morada</label>
+          <input type="text" class="form-control" id="morada" required />
+        </div>
+        <div class="mb-3">
+          <label for="codigoPostal" class="form-label">Código Postal</label>
+          <input type="text" class="form-control" id="codigoPostal" required />
+        </div>
+        <div class="mb-3">
+          <label for="pais" class="form-label">País</label>
+          <select class="form-select" id="pais" required>
+            <option value="Portugal">Portugal</option>
+            <option value="Espanha">Espanha</option>
+            <option value="França">França</option>
+            <option value="Itália">Itália</option>
+            <option value="Alemanha">Alemanha</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label for="localidade" class="form-label">Localidade</label>
+          <input type="text" class="form-control" id="localidade" required />
+        </div>
+        <div class="mb-3">
+          <label for="telefone" class="form-label">N.º de Telemóvel</label>
+          <input type="tel" class="form-control" id="telefone" required />
+        </div>
+        <div class="mb-3">
+          <label for="email" class="form-label">E-mail</label>
+          <input type="email" class="form-control" id="email" required />
+        </div>
+        <div class="mb-3">
+          <label for="nif" class="form-label">NIF/VAT</label>
+          <input type="text" class="form-control" id="nif" required />
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">Confirmar Compra</button>
+      </form>
+    </div>
+
+    <!-- Confirmação de dados -->
+    <div id="confirmacaoContainer" class="confirmacao-container">
+      <h3 class="mb-3">Confirmação de Dados</h3>
+      <div>
+        <p><strong>Nome:</strong> <span id="confirmNome"></span></p>
+        <p><strong>Morada:</strong> <span id="confirmMorada"></span></p>
+        <p><strong>Código Postal:</strong> <span id="confirmCodigoPostal"></span></p>
+        <p><strong>País:</strong> <span id="confirmPais"></span></p>
+        <p><strong>Localidade:</strong> <span id="confirmLocalidade"></span></p>
+        <p><strong>Telemóvel:</strong> <span id="confirmTelefone"></span></p>
+        <p><strong>E-mail:</strong> <span id="confirmEmail"></span></p>
+        <p><strong>NIF/VAT:</strong> <span id="confirmNif"></span></p>
+        <p><strong>Total:</strong> € <span id="confirmTotal"></span></p>
+      </div>
+
+      <button class="btn btn-primary w-100" onclick="mostrarPagamento()">Confirmar Dados e Efetuar Pagamento</button>
+    </div>
+
+    <!-- Pagamento -->
+    <div id="pagamentoContainer" class="pagamento-container">
+      <h3 class="mb-3">Pagamento</h3>
+      <p>Escolha o método de pagamento:</p>
+      <button class="btn btn-success w-100" onclick="processarPagamento('cartao')">Pagamento por Cartão</button>
+      <button class="btn btn-success w-100 mt-2" onclick="processarPagamento('mbway')">Pagamento via MBWay</button>
+    </div>
+  </div>
+
+  <script>
+    function renderCarrinho() {
+      const carrinho = JSON.parse(localStorage.getItem("carrinho") || "[]");
+      const container = document.getElementById("carrinhoContainer");
+      container.innerHTML = "";
+
+      if (carrinho.length === 0) {
+        container.innerHTML = "<p class='text-center'>O carrinho está vazio.</p>";
+        document.getElementById("totalValor").textContent = "0.00";
+        return;
+      }
+
+      let total = 0;
+
+      carrinho.forEach((item, index) => {
+        total += item.preco;
+
+        const itemHtml = `
+          <div class="d-flex align-items-start item-row">
+            <img src="${item.imagem}" alt="${item.nome}" class="item-img" />
+            <div class="item-info">
+              <h5 class="mb-1">${item.nome}</h5>
+              <p class="mb-1">Tamanho: <strong>${item.tamanho}</strong></p>
+              <p class="mb-1">Personalização: <strong>${item.personalizacao === 'sim' ? 'Sim' : item.personalizacao === 'nao' ? 'Não' : 'Neutro'}</strong></p>
+              ${item.personalizacao === 'sim' ? ` 
+                <p class="mb-1">Nome: <strong>${item.nomePersonalizado}</strong></p>
+                <p class="mb-1">Número: <strong>${item.numeroPersonalizado}</strong></p>
+              ` : ''}
+              <p class="mb-1 text-success fw-bold">€ ${item.preco.toFixed(2)}</p>
+              <button class="btn btn-sm btn-danger mt-2" onclick="removerItem(${index})">Remover</button>
+            </div>
+          </div>
+        `;
+
+        container.innerHTML += itemHtml;
+      });
+
+      document.getElementById("totalValor").textContent = total.toFixed(2);
+    }
+
+    function removerItem(index) {
+      const carrinho = JSON.parse(localStorage.getItem("carrinho") || "[]");
+      carrinho.splice(index, 1);
+      localStorage.setItem("carrinho", JSON.stringify(carrinho));
+      renderCarrinho();
+    }
+
+    function mostrarFormulario() {
+      const formulario = document.getElementById("formularioFinalizar");
+      formulario.style.display = "block";
+    }
+
+    document.getElementById("formCompra").addEventListener("submit", function(event) {
+      event.preventDefault();
+
+      // Coletar dados do formulário
+      const nome = document.getElementById("nome").value;
+      const morada = document.getElementById("morada").value;
+      const codigoPostal = document.getElementById("codigoPostal").value;
+      const pais = document.getElementById("pais").value;
+      const localidade = document.getElementById("localidade").value;
+      const telefone = document.getElementById("telefone").value;
+      const email = document.getElementById("email").value;
+      const nif = document.getElementById("nif").value;
+
+      // Exibir dados de confirmação
+      document.getElementById("confirmNome").textContent = nome;
+      document.getElementById("confirmMorada").textContent = morada;
+      document.getElementById("confirmCodigoPostal").textContent = codigoPostal;
+      document.getElementById("confirmPais").textContent = pais;
+      document.getElementById("confirmLocalidade").textContent = localidade;
+      document.getElementById("confirmTelefone").textContent = telefone;
+      document.getElementById("confirmEmail").textContent = email;
+      document.getElementById("confirmNif").textContent = nif;
+      document.getElementById("confirmTotal").textContent = document.getElementById("totalValor").textContent;
+
+      document.getElementById("formularioFinalizar").style.display = "none";
+      document.getElementById("confirmacaoContainer").style.display = "block";
+    });
+
+    function mostrarPagamento() {
+      const pagamentoContainer = document.getElementById("pagamentoContainer");
+      pagamentoContainer.style.display = "block";
+      document.getElementById("confirmacaoContainer").style.display = "none";
+    }
+
+    function processarPagamento(metodo) {
+      alert(`Pagamento efetuado com sucesso via ${metodo.toUpperCase()}!`);
+      localStorage.removeItem("carrinho");
+      window.location.href = "index.html";
+    }
+
+    renderCarrinho();
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

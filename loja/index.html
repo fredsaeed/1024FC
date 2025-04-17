@@ -27,7 +27,6 @@
       border: none;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       transition: transform 0.2s ease-in-out;
-      cursor: pointer;
     }
 
     .card:hover {
@@ -60,7 +59,15 @@
 </head>
 <body>
   <nav>
-    <h2>Loja 1024 FC</h2>
+    <div class="d-flex justify-content-between align-items-center">
+      <h2 class="mb-0">Loja 1024 FC</h2>
+      <div>
+        <button class="btn btn-light position-relative" onclick="window.location.href='carrinho.html'">
+          🛒
+          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="cartCount">0</span>
+        </button>
+      </div>
+    </div>    
   </nav>
 
   <div class="container-custom">
@@ -107,15 +114,16 @@
 
         const cardHTML = `
           <div class="col-md-4 mb-4">
-            <div class="card p-3" onclick="window.location.href='produto.html?id=${idProduto}'">
+            <div class="card p-3">
               <img src="${defaultImg}" 
                    class="card-img-top product-img mb-2" 
                    alt="Produto" 
                    data-default="${defaultImg}" 
-                   data-hover="${hoverImg}">
+                   data-hover="${hoverImg}"
+                   onclick="window.location.href='produto.html?id=${idProduto}'">
               <div class="card-body">
                 <div class="product-name">${produto.nome_produto}</div>
-                <div class="product-price">€ ${parseFloat(produto.preco).toFixed(2)}</div>
+                <div class="product-price mb-2">€ ${parseFloat(produto.preco).toFixed(2)}</div>
               </div>
             </div>
           </div>
@@ -136,6 +144,22 @@
     }
 
     loadProdutos();
+
+    function atualizarContadorCarrinho() {
+      const carrinho = JSON.parse(localStorage.getItem("carrinho") || "[]");
+      document.getElementById("cartCount").textContent = carrinho.length;
+    }
+
+    atualizarContadorCarrinho();
+
+    // Torna a função acessível globalmente
+    window.adicionarAoCarrinho = function(id, nome, preco, imagem) {
+      const carrinho = JSON.parse(localStorage.getItem("carrinho") || "[]");
+      carrinho.push({ id, nome, preco, imagem });
+      localStorage.setItem("carrinho", JSON.stringify(carrinho));
+      atualizarContadorCarrinho();
+      alert("Produto adicionado ao carrinho!");
+    };
   </script>
 </body>
 </html>

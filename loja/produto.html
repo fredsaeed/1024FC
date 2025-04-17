@@ -47,7 +47,15 @@
 </head>
 <body>
   <nav>
-    <h2>Detalhes do Produto</h2>
+    <div class="d-flex justify-content-between align-items-center">
+      <h2 class="mb-0">Detalhes do Produto</h2>
+      <div>
+        <button class="btn btn-light position-relative" onclick="window.location.href='carrinho.html'">
+          🛒
+          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="cartCount">0</span>
+        </button>
+      </div>
+    </div>    
   </nav>
 
   <div class="container-custom">
@@ -98,6 +106,8 @@
         </div>
       `).join("");
 
+      const imagemPrincipal = fotos[0] || "";
+
       const html = `
         <div class="card p-4 shadow-sm">
           <div id="carouselFotos" class="carousel slide mb-4" data-bs-ride="carousel">
@@ -111,8 +121,46 @@
               <span class="carousel-control-next-icon"></span>
             </button>
           </div>
-          <div class="product-name">${produto.nome_produto}</div>
-          <div class="product-price">€ ${parseFloat(produto.preco).toFixed(2)}</div>
+          <div class="product-name mb-2">${produto.nome_produto}</div>
+          <div class="product-price mb-3">€ ${parseFloat(produto.preco).toFixed(2)}</div>
+
+          <div class="mb-3">
+            <label class="form-label">Tamanho</label>
+            <select class="form-select" id="tamanhoSelect">
+              <option value="" selected disabled>Selecionar tamanho</option>
+              <option>XS</option>
+              <option>S</option>
+              <option>M</option>
+              <option>L</option>
+              <option>XL</option>
+              <option>2XL</option>
+              <option>3XL</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Personalização</label>
+            <select class="form-select" id="personalizacaoSelect" onchange="toggleCamposPersonalizacao()">
+              <option value="">Escolher...</option>
+              <option value="nao">Não</option>
+              <option value="sim">Sim</option>
+            </select>
+          </div>
+
+          <div id="camposPersonalizacao" style="display: none;">
+            <div class="mb-3">
+              <label class="form-label">Nome na camisola</label>
+              <input type="text" class="form-control" id="nomePersonalizado" placeholder="Ex: João">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Número</label>
+              <input type="number" class="form-control" id="numeroPersonalizado" placeholder="Ex: 10">
+            </div>
+          </div>
+
+          <button class="btn btn-success w-100" onclick="adicionarAoCarrinhoDetalhado(${idProduto}, '${produto.nome_produto.replace(/'/g, "\\'")}', ${parseFloat(produto.preco)}, '${imagemPrincipal}')">
+            Adicionar ao Carrinho
+          </button>
         </div>
       `;
 
@@ -120,7 +168,61 @@
     }
 
     loadProduto();
+
+    // Atualiza o contador do carrinho
+    function atualizarContadorCarrinho() {
+      const carrinho = JSON.parse(localStorage.getItem("carrinho") || "[]");
+      document.getElementById("cartCount").textContent = carrinho.length;
+    }
+
+    atualizarContadorCarrinho();
+
+    // Mostrar ou ocultar campos de personalização
+    window.toggleCamposPersonalizacao = function () {
+      const select = document.getElementById("personalizacaoSelect").value;
+      document.getElementById("camposPersonalizacao").style.display = select === "sim" ? "block" : "none";
+    };
+
+    // Adicionar ao carrinho com detalhes
+    window.adicionarAoCarrinhoDetalhado = function(id, nome, preco, imagem) {
+      const tamanho = document.getElementById("tamanhoSelect").value;
+      const personalizacao = document.getElementById("personalizacaoSelect").value;
+      const nomePersonalizado = document.getElementById("nomePersonalizado").value.trim();
+      const numeroPersonalizado = document.getElementById("numeroPersonalizado").value.trim();
+
+      if (!tamanho) {
+        alert("Por favor, selecione um tamanho.");
+        return;
+      }
+
+      if (!personalizacao) {
+        alert("Por favor, selecione se deseja personalização.");
+        return;
+      }
+
+      if (personalizacao === "sim" && (!nomePersonalizado || !numeroPersonalizado)) {
+        alert("Por favor, preencha o nome e o número para personalização.");
+        return;
+      }
+
+      const carrinho = JSON.parse(localStorage.getItem("carrinho") || "[]");
+      carrinho.push({
+        id,
+        nome,
+        preco,
+        imagem,
+        tamanho,
+        personalizacao,
+        nomePersonalizado: personalizacao === "sim" ? nomePersonalizado : null,
+        numeroPersonalizado: personalizacao === "sim" ? numeroPersonalizado : null
+      });
+
+      localStorage.setItem("carrinho", JSON.stringify(carrinho));
+      atualizarContadorCarrinho();
+      alert("Produto adicionado ao carrinho!");
+    };
   </script>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
