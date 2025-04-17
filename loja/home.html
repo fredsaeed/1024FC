@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Produtos - Loja 1024 FC</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <style>
+    body {
+      background-color: #f5f7fa;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    nav {
+      background-color: #006400;
+      padding: 15px 20px;
+      color: white;
+    }
+
+    nav h2 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .card {
+      border: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      transition: transform 0.2s ease-in-out;
+      cursor: pointer;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+    }
+
+    .product-img {
+      object-fit: cover;
+      width: 100%;
+      border-radius: 8px;
+    }
+
+    .container-custom {
+      max-width: 1200px;
+      margin: auto;
+      padding: 40px 20px;
+    }
+
+    .product-name {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .product-price {
+      font-size: 1rem;
+      color: #006400;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <h2>Loja 1024 FC</h2>
+  </nav>
+
+  <div class="container-custom">
+    <h3 class="mb-4 text-center text-success">Produtos Disponíveis</h3>
+    <div class="row" id="productGrid">
+      <!-- Produtos vão aparecer aqui -->
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.2/firebase-app.js";
+    import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/9.0.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBVWDPxef51zLUecq6mdykHHsjb3-4RipE",
+      authDomain: "fc-97e26.firebaseapp.com",
+      projectId: "fc-97e26",
+      storageBucket: "fc-97e26.appspot.com",
+      messagingSenderId: "681974250508",
+      appId: "1:681974250508:web:f524ef640cf183f21c8229",
+      measurementId: "G-C7DVJVVC6C"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    async function loadProdutos() {
+      const produtosSnapshot = await getDocs(collection(db, "produtos"));
+      const productGrid = document.getElementById("productGrid");
+
+      for (const doc of produtosSnapshot.docs) {
+        const produto = doc.data();
+        const idProduto = produto.id;
+
+        const fotosSnapshot = await getDocs(query(collection(db, "fotos_produtos"), where("id_produto", "==", idProduto)));
+        const fotos = [];
+
+        fotosSnapshot.forEach(foto => {
+          fotos.push(foto.data().foto_path);
+        });
+
+        const defaultImg = fotos[2] || fotos[0] || "";
+        const hoverImg = fotos[1] || fotos[0] || "";
+
+        const cardHTML = `
+          <div class="col-md-4 mb-4">
+            <div class="card p-3" onclick="window.location.href='produto.html?id=${idProduto}'">
+              <img src="${defaultImg}" 
+                   class="card-img-top product-img mb-2" 
+                   alt="Produto" 
+                   data-default="${defaultImg}" 
+                   data-hover="${hoverImg}">
+              <div class="card-body">
+                <div class="product-name">${produto.nome_produto}</div>
+                <div class="product-price">€ ${parseFloat(produto.preco).toFixed(2)}</div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        productGrid.innerHTML += cardHTML;
+      }
+
+      setTimeout(() => {
+        const images = document.querySelectorAll('.product-img');
+        images.forEach(img => {
+          const defaultSrc = img.getAttribute('data-default');
+          const hoverSrc = img.getAttribute('data-hover');
+          img.addEventListener('mouseenter', () => img.src = hoverSrc);
+          img.addEventListener('mouseleave', () => img.src = defaultSrc);
+        });
+      }, 100);
+    }
+
+    loadProdutos();
+  </script>
+</body>
+</html>

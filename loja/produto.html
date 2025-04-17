@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detalhes do Produto</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      background-color: #f5f7fa;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    nav {
+      background-color: #006400;
+      padding: 15px 20px;
+      color: white;
+    }
+
+    nav h2 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .container-custom {
+      max-width: 900px;
+      margin: auto;
+      padding: 40px 20px;
+    }
+
+    .product-name {
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+
+    .product-price {
+      font-size: 1.25rem;
+      color: #006400;
+    }
+
+    .carousel-item img {
+      max-height: 400px;
+      object-fit: contain;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <h2>Detalhes do Produto</h2>
+  </nav>
+
+  <div class="container-custom">
+    <div id="produtoDetalhes"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.2/firebase-app.js";
+    import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.0.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBVWDPxef51zLUecq6mdykHHsjb3-4RipE",
+      authDomain: "fc-97e26.firebaseapp.com",
+      projectId: "fc-97e26",
+      storageBucket: "fc-97e26.appspot.com",
+      messagingSenderId: "681974250508",
+      appId: "1:681974250508:web:f524ef640cf183f21c8229",
+      measurementId: "G-C7DVJVVC6C"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const idProduto = parseInt(urlParams.get('id'));
+
+    async function loadProduto() {
+      const produtoQuery = query(collection(db, "produtos"), where("id", "==", idProduto));
+      const produtoSnapshot = await getDocs(produtoQuery);
+
+      if (produtoSnapshot.empty) {
+        document.getElementById("produtoDetalhes").innerHTML = "<p>Produto não encontrado.</p>";
+        return;
+      }
+
+      const produto = produtoSnapshot.docs[0].data();
+
+      const fotosSnapshot = await getDocs(query(collection(db, "fotos_produtos"), where("id_produto", "==", idProduto)));
+      const fotos = [];
+
+      fotosSnapshot.forEach(foto => {
+        fotos.push(foto.data().foto_path);
+      });
+
+      let carouselInner = fotos.map((foto, i) => `
+        <div class="carousel-item ${i === 0 ? 'active' : ''}">
+          <img src="${foto}" class="d-block w-100" alt="Foto do produto">
+        </div>
+      `).join("");
+
+      const html = `
+        <div class="card p-4 shadow-sm">
+          <div id="carouselFotos" class="carousel slide mb-4" data-bs-ride="carousel">
+            <div class="carousel-inner">
+              ${carouselInner}
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#carouselFotos" data-bs-slide="prev">
+              <span class="carousel-control-prev-icon"></span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#carouselFotos" data-bs-slide="next">
+              <span class="carousel-control-next-icon"></span>
+            </button>
+          </div>
+          <div class="product-name">${produto.nome_produto}</div>
+          <div class="product-price">€ ${parseFloat(produto.preco).toFixed(2)}</div>
+        </div>
+      `;
+
+      document.getElementById("produtoDetalhes").innerHTML = html;
+    }
+
+    loadProduto();
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

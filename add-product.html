@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Adicionar Produto</title>
+  <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f7fa;
+      margin: 0;
+      padding: 0;
+    }
+
+    nav {
+      background-color: #006400;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: white;
+    }
+
+    nav h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    nav button {
+      background-color: white;
+      color: #006400;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+    }
+
+    nav button:hover {
+      background-color: #e0e0e0;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      background: #fff;
+      border-radius: 10px;
+      padding: 30px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      text-align: center;
+      color: #006400;
+    }
+
+    form label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+
+    form input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+
+    form button {
+      width: 100%;
+      background-color: #006400;
+      color: white;
+      padding: 12px;
+      border: none;
+      border-radius: 5px;
+      margin-top: 25px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    form button:hover {
+      background-color: #004d00;
+    }
+
+    .preview img {
+      max-width: 100px;
+      margin: 5px;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <h2>1024 FC - Loja</h2>
+    <button onclick="window.location.href='backend.html'">Voltar atrás</button>
+  </nav>
+
+  <div class="container">
+    <h1>Adicionar Produto</h1>
+
+    <form id="productForm">
+      <label>Nome do Produto:</label>
+      <input type="text" id="nome_produto" required>
+
+      <label>Preço (ex: 1.00):</label>
+      <input type="number" id="preco" step="0.01" required>
+
+      <label>Fotos do Produto:</label>
+      <input type="file" id="fotos" accept="image/*" multiple>
+
+      <div class="preview" id="preview"></div>
+
+      <button type="submit">Adicionar Produto</button>
+    </form>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.2/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.0.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBVWDPxef51zLUecq6mdykHHsjb3-4RipE",
+      authDomain: "fc-97e26.firebaseapp.com",
+      projectId: "fc-97e26",
+      storageBucket: "fc-97e26.appspot.com",
+      messagingSenderId: "681974250508",
+      appId: "1:681974250508:web:f524ef640cf183f21c8229"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let fotosProduto = [];
+
+    const cloudinaryWidget = cloudinary.createUploadWidget({
+      cloudName: 'dkavb3don',
+      uploadPreset: '1024fc',
+      sources: ['local', 'url', 'camera'],
+      showAdvancedOptions: false,
+      cropping: false,
+      multiple: true,
+      maxFileSize: 10000000
+    }, (error, result) => {
+      if (result.event === "success") {
+        fotosProduto.push(result.info.secure_url);
+        document.getElementById("preview").innerHTML += `<img src="${result.info.secure_url}" alt="foto">`;
+      }
+    });
+
+    document.getElementById("fotos").addEventListener("change", () => cloudinaryWidget.open());
+
+    document.getElementById("productForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+
+      const nome = document.getElementById("nome_produto").value;
+      const preco = parseFloat(document.getElementById("preco").value).toFixed(2);
+
+      try {
+        const q = query(collection(db, "produtos"), orderBy("id", "desc"), limit(1));
+        const snap = await getDocs(q);
+        const lastId = snap.docs.length > 0 ? snap.docs[0].data().id : 0;
+        const novoId = lastId + 1;
+
+        await addDoc(collection(db, "produtos"), {
+          id: novoId,
+          nome_produto: nome,
+          preco: preco
+        });
+
+        for (const foto of fotosProduto) {
+          await addDoc(collection(db, "fotos_produtos"), {
+            id_produto: novoId,
+            foto_path: foto
+          });
+        }
+
+        alert('Produto adicionado com sucesso!');
+        document.getElementById("productForm").reset();
+        document.getElementById("preview").innerHTML = "";
+        fotosProduto = [];
+
+      } catch (error) {
+        console.error("Erro ao adicionar produto:", error);
+      }
+    });
+  </script>
+</body>
+</html>
