@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Encomenda Recebida</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Biblioteca para gerar PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <!-- Biblioteca EmailJS -->
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+  <script type="text/javascript">
+    (function() {
+      emailjs.init("Qi74zhH1kCjzfNAeF"); // Sua Public Key
+    })();
+  </script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .confirmation-card {
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .success-icon {
+      font-size: 2.5rem;
+      color: #28a745;
+    }
+    .pdf-button {
+      background-color: #dc3545;
+      border-color: #dc3545;
+      margin-left: 10px;
+    }
+    .pdf-button:hover {
+      background-color: #bb2d3b;
+      border-color: #b02a37;
+    }
+  </style>
+</head>
+<body class="bg-light">
+  <div class="container mt-5 mb-5">
+    <div class="card confirmation-card shadow p-4">
+      <div class="text-center mb-4">
+        <div class="success-icon">✓</div>
+        <h2 class="text-success">Encomenda Recebida com Sucesso!</h2>
+      </div>
+      <p class="text-center">Obrigado pela sua compra. Aqui estão os detalhes da encomenda:</p>
+
+      <div class="mt-4">
+        <h4 class="border-bottom pb-2">🧾 Dados do Cliente</h4>
+        <ul class="list-group mb-4" id="dadosCliente"></ul>
+      </div>
+
+      <div>
+        <h4 class="border-bottom pb-2">📦 Produtos Comprados</h4>
+        <div id="produtosContainer" class="mb-4"></div>
+      </div>
+
+      <div>
+        <h4 class="border-bottom pb-2">💳 Pagamento</h4>
+        <ul class="list-group" id="dadosPagamento"></ul>
+      </div>
+
+      <div class="mt-4 text-center">
+        <a href="index.html" class="btn btn-primary px-4">Voltar à Loja</a>
+        <button id="downloadPdf" class="btn pdf-button px-4">Download PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Inicializa jsPDF
+    const { jsPDF } = window.jspdf;
+
+    // Obtém os dados da compra
+    const dadosCompra = localStorage.getItem("dadosCompra");
+    const dados = dadosCompra ? JSON.parse(dadosCompra) : {};
+
+    // Preenche os dados do cliente
+    const clienteHtml = `
+      <li class="list-group-item"><strong>Nome:</strong> ${dados.nome || 'Não informado'}</li>
+      <li class="list-group-item"><strong>Morada:</strong> ${dados.morada || 'Não informado'}</li>
+      <li class="list-group-item"><strong>Código Postal:</strong> ${dados.codigoPostal || 'Não informado'}</li>
+      <li class="list-group-item"><strong>Localidade:</strong> ${dados.localidade || 'Não informado'}</li>
+      <li class="list-group-item"><strong>País:</strong> ${dados.pais || 'Não informado'}</li>
+      <li class="list-group-item"><strong>Telefone:</strong> ${dados.telefone || 'Não informado'}</li>
+      <li class="list-group-item"><strong>Email:</strong> ${dados.email || 'Não informado'}</li>
+      ${dados.nif ? `<li class="list-group-item"><strong>NIF:</strong> ${dados.nif}</li>` : ""}
+    `;
+    document.getElementById("dadosCliente").innerHTML = clienteHtml;
+
+    // Preenche os produtos comprados
+    const produtos = dados.produtos || [];
+    const container = document.getElementById("produtosContainer");
+
+    if (produtos.length === 0) {
+      container.innerHTML = "<p class='text-muted'>Sem produtos registados.</p>";
+    } else {
+      produtos.forEach(produto => {
+        const div = document.createElement("div");
+        div.classList.add("mb-3", "p-3", "border", "rounded", "bg-white");
+
+        div.innerHTML = `
+          <p><strong>${produto.nome}</strong></p>
+          <p><strong>Tamanho:</strong> ${produto.tamanho}</p>
+          <p><strong>Preço:</strong> € ${produto.preco?.toFixed(2) || '0.00'}</p>
+          ${produto.personalizacao === "sim" ? `
+            <p><strong>Nome Personalizado:</strong> ${produto.nomePersonalizado}</p>
+            <p><strong>Número:</strong> ${produto.numeroPersonalizado}</p>
+          ` : ""}
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    // Preenche os dados de pagamento
+    const pagamentoHtml = `
+      <li class="list-group-item"><strong>Método:</strong> ${dados.metodoPagamento || 'Não informado'}</li>
+      <li class="list-group-item"><strong>Nome do Pagador:</strong> ${dados.nomePagador || 'Não informado'}</li>
+      <li class="list-group-item"><strong>Email do Pagador:</strong> ${dados.emailPagador || 'Não informado'}</li>
+      <li class="list-group-item"><strong>ID da Transação:</strong> ${dados.idTransacao || 'Não informado'}</li>
+      <li class="list-group-item"><strong>Total Pago:</strong> € ${parseFloat(dados.total || 0).toFixed(2)}</li>
+    `;
+    document.getElementById("dadosPagamento").innerHTML = pagamentoHtml;
+
+    // Função para gerar PDF
+    function gerarPDF() {
+      const doc = new jsPDF();
+      
+      // Cabeçalho
+      doc.setFontSize(18);
+      doc.setTextColor(40, 167, 69);
+      doc.text('1024 FC - Loja', 105, 20, { align: 'center' });
+      doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
+      doc.text('Fatura/Recibo', 105, 30, { align: 'center' });
+      
+      // Linha divisória
+      doc.setDrawColor(200, 200, 200);
+      doc.line(20, 35, 190, 35);
+      
+      // Dados da fatura
+      doc.setFontSize(12);
+      doc.text(`Nº Fatura: ${dados.idTransacao || 'N/A'}`, 20, 45);
+      doc.text(`Data: ${new Date().toLocaleDateString()}`, 20, 55);
+      
+      // Dados do cliente
+      doc.setFontSize(14);
+      doc.text('Dados do Cliente', 20, 70);
+      doc.setFontSize(12);
+      doc.text(`Nome: ${dados.nome || 'Não informado'}`, 20, 80);
+      doc.text(`Email: ${dados.email || 'Não informado'}`, 20, 90);
+      doc.text(`Telefone: ${dados.telefone || 'Não informado'}`, 20, 100);
+      doc.text(`NIF: ${dados.nif || 'Não informado'}`, 20, 110);
+      
+      // Produtos
+      doc.setFontSize(14);
+      doc.text('Produtos', 20, 125);
+      
+      // Tabela de produtos
+      const produtosData = produtos.map(produto => [
+        produto.nome,
+        produto.tamanho,
+        `€ ${produto.preco?.toFixed(2) || '0.00'}`,
+        produto.personalizacao === "sim" ? 'Sim' : 'Não'
+      ]);
+      
+      doc.autoTable({
+        startY: 130,
+        head: [['Nome', 'Tamanho', 'Preço', 'Personalizado']],
+        body: produtosData,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [44, 62, 80],
+          textColor: 255
+        }
+      });
+      
+      // Total
+      const finalY = doc.lastAutoTable.finalY + 10;
+      doc.setFontSize(14);
+      doc.text(`Total: € ${parseFloat(dados.total || 0).toFixed(2)}`, 140, finalY);
+      
+      // Rodapé
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text('Obrigado por sua compra!', 105, 280, { align: 'center' });
+      doc.text('1024 FC - Loja', 105, 285, { align: 'center' });
+      
+      return doc;
+    }
+
+    // Função para enviar e-mail com PDF
+    async function enviarEmailComPDF() {
+      try {
+        // Gerar PDF
+        const pdfDoc = gerarPDF();
+        
+        // Converter PDF para base64
+        const pdfOutput = pdfDoc.output('datauristring');
+        const base64Data = pdfOutput.split(',')[1];
+        
+        // Gerar corpo do e-mail (HTML)
+        const htmlFinal = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+          <div style="background-color: #f8f9fa; padding: 20px; text-align: center; border-bottom: 1px solid #ddd;">
+            <h1 style="color: #28a745;">✓ Encomenda Confirmada</h1>
+            <p style="font-size: 16px;">Obrigado por sua compra na 1024 FC - Loja</p>
+          </div>
+
+          <div style="padding: 20px;">
+            <h2 style="color: #2c3e50; border-bottom: 1px solid #eee; padding-bottom: 10px;">Detalhes da Encomenda</h2>
+            
+            <h3 style="color: #2c3e50; margin-top: 20px;">Dados do Cliente</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+              <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee; width: 30%;"><strong>Nome:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${dados.nome || 'Não informado'}</td></tr>
+              <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Email:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${dados.email || 'Não informado'}</td></tr>
+              <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Telefone:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${dados.telefone || 'Não informado'}</td></tr>
+              <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Morada:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${dados.morada || 'Não informado'}</td></tr>
+              <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Código Postal:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${dados.codigoPostal || 'Não informado'}</td></tr>
+              ${dados.nif ? `<tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>NIF:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${dados.nif}</td></tr>` : ''}
+            </table>
+
+            <h3 style="color: #2c3e50; margin-top: 20px;">Produtos</h3>
+            ${(dados.produtos || []).map(produto => `
+              <div style="border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 4px;">
+                <p style="font-size: 18px; margin: 0 0 10px 0;"><strong>${produto.nome}</strong></p>
+                <p style="margin: 5px 0;"><strong>Tamanho:</strong> ${produto.tamanho}</p>
+                <p style="margin: 5px 0;"><strong>Preço:</strong> € ${produto.preco?.toFixed(2) || '0.00'}</p>
+                ${produto.personalizacao === "sim" ? `
+                  <p style="margin: 5px 0;"><strong>Nome Personalizado:</strong> ${produto.nomePersonalizado}</p>
+                  <p style="margin: 5px 0;"><strong>Número:</strong> ${produto.numeroPersonalizado}</p>
+                ` : ""}
+              </div>
+            `).join('')}
+
+            <h3 style="color: #2c3e50; margin-top: 20px;">Pagamento</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+              <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee; width: 40%;"><strong>Método:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${dados.metodoPagamento || 'Não informado'}</td></tr>
+              <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>ID da Transação:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${dados.idTransacao || 'Não informado'}</td></tr>
+              <tr><td style="padding: 8px 0;"><strong>Total Pago:</strong></td><td style="padding: 8px 0;">€ ${parseFloat(dados.total || 0).toFixed(2)}</td></tr>
+            </table>
+
+            <div style="text-align: center; margin-top: 30px; color: #777; font-size: 14px;">
+              <p>Em anexo encontrará a fatura em formato PDF.</p>
+              <p>Obrigado por comprar conosco!</p>
+              <p>Equipa 1024 FC - Loja</p>
+            </div>
+          </div>
+        </div>
+        `;
+
+        // Enviar o e-mail com o conteúdo gerado e PDF anexo
+        const templateParams = {
+          nome: dados.nome || "Cliente",
+          email: dados.email || "sem-email@exemplo.com",
+          corpo_html: htmlFinal,
+          attachments: [
+            {
+              name: `fatura_${dados.idTransacao || Date.now()}.pdf`,
+              data: base64Data
+            }
+          ]
+        };
+
+        emailjs.send("service_9wkf94j", "template_1ezkyik", templateParams)
+          .then(function(response) {
+            console.log("E-mail enviado com sucesso!", response.status, response.text);
+          }, function(error) {
+            console.error("Erro ao enviar e-mail:", error);
+            alert("Erro ao enviar e-mail: " + JSON.stringify(error));
+          });
+
+      } catch (error) {
+        console.error("Erro ao gerar ou enviar PDF:", error);
+        alert("Ocorreu um erro ao processar a fatura.");
+      }
+    }
+
+    // Botão para download do PDF
+    document.getElementById('downloadPdf').addEventListener('click', () => {
+      const pdfDoc = gerarPDF();
+      pdfDoc.save(`fatura_${dados.idTransacao || Date.now()}.pdf`);
+    });
+
+    // Limpar carrinho e localStorage
+    localStorage.removeItem("carrinho");
+    localStorage.removeItem("dadosCompra");
+
+    // Enviar e-mail automaticamente com PDF
+    window.addEventListener('load', () => {
+      setTimeout(enviarEmailComPDF, 1000); // Pequeno delay para garantir que tudo está carregado
+    });
+  </script>
+</body>
+</html>
