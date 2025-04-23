@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visualizador de PDF - 1024 FC</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background-color: #0d0d0d;
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background-color: #006400;
+      padding: 20px 0;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 32px;
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    iframe {
+      width: 90%;
+      height: 90vh;
+      border: 1px solid #333;
+      border-radius: 8px;
+      background-color: #fff;
+    }
+
+    footer {
+      background-color: #0b2e13;
+      padding: 20px 0;
+      text-align: center;
+      color: #ccc;
+    }
+
+    .footer-link {
+      color: #90ee90;
+      text-decoration: none;
+    }
+
+    .footer-link:hover {
+      color: #ffffff;
+      text-decoration: underline;
+    }
+
+    .footer-logo {
+      height: 50px;
+      margin: 0 10px;
+      object-fit: contain;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Visualizador de PDF</h1>
+  </header>
+
+  <main>
+    <iframe src="assets/Resultados-CENSOS1024.pdf" type="application/pdf"></iframe>
+  </main>
+
+  <footer>
+    <p>© 2025 1024 FC. Todos os direitos reservados.</p>
+    <p><a href="politica-privacidade.html" class="footer-link">Política de Privacidade</a></p>
+    <div class="d-flex justify-content-center align-items-center gap-3 flex-wrap mt-2">
+      <img src="assets/bwin.png" alt="Logo 1" class="footer-logo">
+      <img src="assets/kilt.png" alt="Logo 2" class="footer-logo">
+      <img src="assets/FL.png" alt="Logo 3" class="footer-logo">
+    </div>
+  </footer>
+
+</body>
+</html>
