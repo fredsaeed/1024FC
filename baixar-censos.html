@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Download Automático</title>
+</head>
+<body>
+  <script>
+    window.onload = function() {
+      const link = document.createElement("a");
+      link.href = "assets/Resultados-CENSOS1024.pdf";
+      link.download = "CENSOS1024.pdf";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    };
+  </script>
+</body>
+</html>
