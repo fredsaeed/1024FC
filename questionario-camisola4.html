@@ -280,7 +280,7 @@
 
       questionarioContent.innerHTML = `
         <div class="questionario-container">
-          <h2>Qual a sua camisola favorita?</h2>
+          <h2>Qual é a tua camisola favorita?</h2>
           <p>Selecione uma das opções abaixo:</p>
           
           <div class="opcoes-grid">
@@ -319,13 +319,13 @@
           
           questionarioContent.innerHTML = `
             <div class="mensagem-respondido">
-              <h2>OBRIGADO PELA SUA RESPOSTA!</h2>
-              <p>Sua escolha foi registada com sucesso <i class="fas fa-smile"></i></p>
+              <h2>OBRIGADO PELA TUA RESPOSTA!</h2>
+              <p>A tua escolha foi registada com sucesso <i class="fas fa-smile"></i></p>
             </div>
           `;
         } catch (error) {
           console.error("Erro ao enviar resposta:", error);
-          alert("Ocorreu um erro ao enviar sua resposta. Por favor, tente novamente.");
+          alert("Ocorreu um erro ao enviar a tua resposta. Por favor, tenta novamente.");
           this.disabled = false;
           this.textContent = "Enviar Resposta";
         }
