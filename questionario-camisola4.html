@@ -148,6 +148,23 @@
       font-size: 18px;
       color: #ddd;
     }
+
+    .footer-link {
+      color: #90ee90;
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    .footer-link:hover {
+      text-decoration: underline;
+      color: #ffffff;
+    }
+
+    .footer-logo {
+      height: 50px;
+      object-fit: contain;
+    }
+
   </style>
 </head>
 <body>
@@ -155,7 +172,7 @@
   <header>
     <img src="assets/logo.png" alt="1024 FC Logo" class="logo" onerror="this.style.display='none'">
     <h1>1024 FC</h1>
-    
+
     <nav class="navbar navbar-expand-lg">
       <div class="container-fluid">
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -184,9 +201,9 @@
               </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="contactos.html">
-                    <i class="fas fa-envelope"></i> Contacto
-                </a>
+              <a class="nav-link" href="contactos.html">
+                <i class="fas fa-envelope"></i> Contacto
+              </a>
             </li>
           </ul>
         </div>
@@ -204,7 +221,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.2/firebase-app.js";
     import { getFirestore, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.0.2/firebase-firestore.js";
 
-    // Configuração do Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyBVWDPxef51zLUecq6mdykHHsjb3-4RipE",
       authDomain: "fc-97e26.firebaseapp.com",
@@ -214,12 +230,10 @@
       appId: "1:681974250508:web:f524ef640cf183f21c8229"
     };
 
-    // Inicializar Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const questionarioContent = document.getElementById("questionario-content");
 
-    // Obter IP do usuário (simplificado - em produção use um serviço adequado)
     async function getUserIP() {
       try {
         const response = await fetch('https://api.ipify.org?format=json');
@@ -227,27 +241,25 @@
         return data.ip;
       } catch (error) {
         console.error("Erro ao obter IP:", error);
-        return Math.random().toString(36).substring(2) + Date.now(); // Fallback único
+        return Math.random().toString(36).substring(2) + Date.now();
       }
     }
 
-    // Verificar se usuário já votou
     async function checkIfUserVoted(ip) {
       const q = query(collection(db, "camisola4"), where("ip", "==", ip));
       const querySnapshot = await getDocs(q);
       return !querySnapshot.empty;
     }
 
-    // Carregar questionário
     async function loadQuestionario() {
       const userIP = await getUserIP();
       const alreadyVoted = await checkIfUserVoted(userIP);
 
-      if (alreadyVoted) {
+      /*if (alreadyVoted) {
         showAlreadyVotedMessage();
-      } else {
+      } else {*/
         showQuestionario(userIP);
-      }
+      /*}*/
     }
 
     function showAlreadyVotedMessage() {
@@ -271,6 +283,14 @@
 
       let selectedOption = null;
 
+      const imagensExtrasHTML = `
+        <div class="opcoes-grid mb-4">
+          <div><img src="assets/camisolas/principal.png" alt="Imagem extra 1" class="img-fluid" onerror="this.src='assets/placeholder.jpg'"></div>
+          <div><img src="assets/camisolas/alternativo.png" alt="Imagem extra 2" class="img-fluid" onerror="this.src='assets/placeholder.jpg'"></div>
+          <div><img src="assets/camisolas/terceira.jpg" alt="Imagem extra 3" class="img-fluid" onerror="this.src='assets/placeholder.jpg'"></div>
+        </div>
+      `;
+
       const opcoesHTML = opcoes.map(opcao => `
         <div class="opcao" data-id="${opcao.id}">
           <img src="${opcao.img}" alt="Opção ${opcao.id}" onerror="this.src='assets/placeholder.jpg'">
@@ -280,22 +300,23 @@
 
       questionarioContent.innerHTML = `
         <div class="questionario-container">
-          <h2>Qual é a tua camisola favorita?</h2>
+            <h2>Camisolas atuais:</h2>
+            ${imagensExtrasHTML}
+          <h2>Qual é a tua camisola favorita? (Para 4.ª camisola)</h2>
           <p>Selecione uma das opções abaixo:</p>
-          
+
           <div class="opcoes-grid">
             ${opcoesHTML}
           </div>
-          
+
           <div class="text-center">
             <button id="submitBtn" class="btn-enviar" disabled>Enviar Resposta</button>
           </div>
         </div>
       `;
 
-      // Adicionar eventos de clique
       document.querySelectorAll('.opcao').forEach(opcao => {
-        opcao.addEventListener('click', function() {
+        opcao.addEventListener('click', function () {
           document.querySelectorAll('.opcao').forEach(o => o.classList.remove('selected'));
           this.classList.add('selected');
           selectedOption = this.dataset.id;
@@ -303,20 +324,19 @@
         });
       });
 
-      // Enviar resposta
-      document.getElementById('submitBtn').addEventListener('click', async function() {
+      document.getElementById('submitBtn').addEventListener('click', async function () {
         if (!selectedOption) return;
-        
+
         this.disabled = true;
         this.textContent = "Enviando...";
-        
+
         try {
           await addDoc(collection(db, "camisola4"), {
             opcao: parseInt(selectedOption),
             ip: userIP,
             timestamp: new Date()
           });
-          
+
           questionarioContent.innerHTML = `
             <div class="mensagem-respondido">
               <h2>OBRIGADO PELA TUA RESPOSTA!</h2>
@@ -332,11 +352,28 @@
       });
     }
 
-    // Iniciar o questionário
     loadQuestionario();
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <footer class="footer mt-auto py-4" style="background-color: #0b2e13;">
+    <div class="container text-center text-light">
+      <p class="mb-1">© 2025 1024 FC. Todos os direitos reservados.</p>
+      <p class="mb-3">
+        <a href="politica-privacidade.html" class="footer-link">Política de Privacidade</a>
+      </p>
+      
+      <hr class="footer-divider my-3">
+  
+      <p class="mb-2">Powered by:</p>
+      <div class="d-flex justify-content-center align-items-center gap-4 flex-wrap">
+        <img src="assets/bwin.png" alt="Logo 1" class="footer-logo">
+        <img src="assets/kilt.png" alt="Logo 2" class="footer-logo">
+        <img src="assets/FL.png" alt="Logo 3" class="footer-logo">
+      </div>
+    </div>
+  </footer>
 
 </body>
 </html>
